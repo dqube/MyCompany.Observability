@@ -1,4 +1,4 @@
-#if NET462
+#if NETFRAMEWORK
 using System;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
@@ -28,7 +28,7 @@ namespace MyCompany.Observability.Console
     public static class ConsoleObservability
     {
         public static IServiceCollection ConfigureConsoleObservability(
-#if NET462
+#if NETFRAMEWORK
             Action<ObservabilityOptions> configureOptions = null)
 #else
             Action<ObservabilityOptions>? configureOptions = null)
@@ -156,7 +156,7 @@ namespace MyCompany.Observability.Console
         }
 
         public static IServiceProvider BuildConsoleObservability(
-#if NET462
+#if NETFRAMEWORK
             Action<ObservabilityOptions> configureOptions = null)
 #else
             Action<ObservabilityOptions>? configureOptions = null)
@@ -166,7 +166,7 @@ namespace MyCompany.Observability.Console
             return services.BuildServiceProvider();
         }
 
-#if NET462
+#if NETFRAMEWORK
         public static IServiceProvider BuildConsoleObservabilityFromAppConfig(string sectionName = "observability")
         {
             var options = ConfigurationHelper.LoadFromAppConfig(sectionName);
@@ -210,7 +210,7 @@ namespace MyCompany.Observability.Console
         }
 #endif
 
-#if !NET462
+#if !NETFRAMEWORK
         public static IHostBuilder ConfigureConsoleObservabilityHost(
             this IHostBuilder hostBuilder,
             Action<ObservabilityOptions>? configureOptions = null)

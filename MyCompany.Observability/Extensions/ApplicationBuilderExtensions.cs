@@ -1,4 +1,4 @@
-#if !NET462
+#if !NETFRAMEWORK
 using System;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;

@@ -1,8 +1,11 @@
 using System;
 using System.Diagnostics;
 
-namespace WebApplication1.Infrastructure
+namespace MyCompany.Observability.Services
 {
+    /// <summary>
+    /// Simple logger interface for applications without Microsoft.Extensions.Logging dependency
+    /// </summary>
     public interface ISimpleLogger
     {
         void LogInformation(string message);
@@ -14,6 +17,10 @@ namespace WebApplication1.Infrastructure
         void LogError(Exception exception, string message, params object[] args);
     }
 
+#if NETFRAMEWORK
+    /// <summary>
+    /// Simple logger implementation for .NET Framework applications
+    /// </summary>
     public class SimpleLogger : ISimpleLogger
     {
         private readonly string _categoryName;
@@ -86,14 +93,14 @@ namespace WebApplication1.Infrastructure
         {
             var timestamp = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff");
             var logMessage = $"[{timestamp}] [{level}] [{_categoryName}] {message}";
-            
+
             // Write to debug output (visible in Visual Studio output window)
             Debug.WriteLine(logMessage);
-            
+
             // Also write to console if available
             try
             {
-                Console.WriteLine(logMessage);
+                global::System.Console.WriteLine(logMessage);
             }
             catch
             {
@@ -102,6 +109,9 @@ namespace WebApplication1.Infrastructure
         }
     }
 
+    /// <summary>
+    /// Factory for creating simple logger instances
+    /// </summary>
     public static class SimpleLoggerFactory
     {
         public static ISimpleLogger CreateLogger<T>()
@@ -114,4 +124,5 @@ namespace WebApplication1.Infrastructure
             return new SimpleLogger(categoryName);
         }
     }
+#endif
 }

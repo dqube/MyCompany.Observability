@@ -1,4 +1,4 @@
-#if NET462
+#if NETFRAMEWORK
 using System;
 using System.Collections.Generic;
 #else
@@ -12,9 +12,9 @@ namespace MyCompany.Observability.Configuration
     {
         public string ServiceName { get; set; } = "MyApplication";
         public string ServiceVersion { get; set; } = "1.0.0";
-#if NET462
-        public string ServiceNamespace { get; set; }
-        public string ServiceInstanceId { get; set; }
+#if NETFRAMEWORK
+        public string? ServiceNamespace { get; set; }
+        public string? ServiceInstanceId { get; set; }
 #else
         public string? ServiceNamespace { get; set; }
         public string? ServiceInstanceId { get; set; }

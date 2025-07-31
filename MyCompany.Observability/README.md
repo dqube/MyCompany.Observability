@@ -1,10 +1,10 @@
 # MyCompany.Observability
 
-A cross-platform observability library with OpenTelemetry support for .NET applications, compatible with .NET 9.0, .NET Framework 4.6.2, and .NET Standard 2.0.
+A cross-platform observability library with OpenTelemetry support for .NET applications, compatible with .NET 9.0, .NET Framework 4.8, .NET Framework 4.6.2, and .NET Standard 2.0.
 
 ## Features
 
-- **Multi-framework support**: .NET 9.0, .NET Framework 4.6.2, .NET Standard 2.0
+- **Multi-framework support**: .NET 9.0, .NET Framework 4.8, .NET Framework 4.6.2, .NET Standard 2.0
 - **OpenTelemetry integration**: Built-in tracing, metrics, and logging with custom instrumentation
 - **Custom tracing**: Create custom activities and spans with service enrichment
 - **Custom metrics**: Record counters, histograms, and gauges with automatic service tagging
@@ -554,16 +554,16 @@ var redactedHeaders = redactionService.RedactHeaders(headers);
 
 ## Framework Compatibility
 
-| Feature | .NET 9.0 | .NET Standard 2.0 | .NET Framework 4.6.2 |
-|---------|----------|-------------------|----------------------|
-| OpenTelemetry | ✅ | ✅ | ✅ |
-| Custom Tracing | ✅ | ✅ | ✅ |
-| Custom Metrics | ✅ | ✅ | ✅ |
-| Request/Response Logging | ✅ | ✅ (Limited) | ✅ |
-| Data Redaction | ✅ | ✅ | ✅ |
-| System.Text.Json | ✅ | ✅ | ✅ |
-| Console Logging | ✅ | ✅ | ✅ |
-| OTLP Export | ✅ | ✅ | ✅ |
+| Feature | .NET 9.0 | .NET Standard 2.0 | .NET Framework 4.6.2 | .NET Framework 4.8 |
+|---------|----------|-------------------|----------------------|----------------------|
+| OpenTelemetry | ✅ | ✅ | ✅ | ✅ |
+| Custom Tracing | ✅ | ✅ | ✅ | ✅ |
+| Custom Metrics | ✅ | ✅ | ✅ | ✅ |
+| Request/Response Logging | ✅ | ✅ (Limited) | ✅ | ✅ |
+| Data Redaction | ✅ | ✅ | ✅ | ✅ |
+| System.Text.Json | ✅ | ✅ | ✅ | ✅ |
+| Console Logging | ✅ | ✅ | ✅ | ✅ |
+| OTLP Export | ✅ | ✅ | ✅ | ✅ |
 
 **Notes**: 
 - .NET Standard 2.0 has limited request buffering capabilities compared to newer frameworks

@@ -1,4 +1,4 @@
-#if NET462
+#if NETFRAMEWORK
 using System;
 using System.Collections.Generic;
 using System.Configuration;
@@ -14,7 +14,7 @@ namespace MyCompany.Observability.Configuration
 {
     public static class ConfigurationHelper
     {
-#if NET462
+#if NETFRAMEWORK
         public static ObservabilityOptions LoadFromAppConfig(string sectionName = "observability")
         {
             var options = new ObservabilityOptions();

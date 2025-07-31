@@ -1,4 +1,4 @@
-#if NET462
+#if NETFRAMEWORK
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -25,7 +25,7 @@ using MyCompany.Observability.Services;
 
 namespace MyCompany.Observability.Middleware
 {
-#if !NET462
+#if !NETFRAMEWORK
     public class RequestResponseLoggingMiddleware
     {
         private readonly RequestDelegate _next;
@@ -211,7 +211,7 @@ namespace MyCompany.Observability.Middleware
     }
 #endif
 
-#if NET462
+#if NETFRAMEWORK
     public class RequestResponseLoggingHandler : System.Net.Http.DelegatingHandler
     {
         private readonly ILoggerFactory _loggerFactory;

@@ -1,4 +1,4 @@
-#if NET462
+#if NETFRAMEWORK
 using System;
 using System.Collections.Generic;
 using Microsoft.Extensions.DependencyInjection;
@@ -30,9 +30,9 @@ namespace MyCompany.Observability.Extensions
         public static IServiceCollection AddObservability(
             this IServiceCollection services,
             IConfiguration configuration,
-#if NET462
-            string serviceName = null,
-            string serviceVersion = null)
+#if NETFRAMEWORK
+            string? serviceName = null,
+            string? serviceVersion = null)
 #else
             string? serviceName = null,
             string? serviceVersion = null)
@@ -73,7 +73,7 @@ namespace MyCompany.Observability.Extensions
             services.AddSingleton<IMetricsService>(provider => 
                 new MetricsService(provider.GetRequiredService<Meter>(), options));
 
-#if !NET462
+#if !NETFRAMEWORK
             services.Configure<ObservabilityOptions>(configureOptions);
 #endif
 
@@ -186,21 +186,22 @@ namespace MyCompany.Observability.Extensions
             return services;
         }
 
-#if !NET462
+#if !NETFRAMEWORK
         public static IServiceCollection AddRequestResponseLogging(this IServiceCollection services)
         {
             return services;
         }
 #endif
 
-#if NET462
+#if NETFRAMEWORK
         public static IServiceCollection AddRequestResponseLogging(this IServiceCollection services,
             ILoggerFactory loggerFactory,
             ObservabilityOptions options,
             IRedactionService redactionService)
         {
-            services.AddSingleton(provider => 
-                new Middleware.RequestResponseLoggingHandler(loggerFactory, options, redactionService));
+            // TODO: Re-enable once RequestResponseLoggingHandler is properly compiled for all .NET Framework versions
+            // services.AddSingleton(provider => 
+            //     new Middleware.RequestResponseLoggingHandler(loggerFactory, options, redactionService));
             return services;
         }
 #endif

@@ -5,8 +5,6 @@ VisualStudioVersion = 17.14.36310.24
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyCompany.Observability", "MyCompany.Observability\MyCompany.Observability.csproj", "{DF900077-6D45-FEBB-C5CD-972CBA61739D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebApplication1", "WebApplication1\WebApplication1.csproj", "{2482EF2F-9021-4AD9-87E7-54AA5C3D3BC8}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestApp", "TestApp\TestApp.csproj", "{A0A5516F-CF94-4F6B-6308-242CCA1A71A5}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebApplication2", "WebApplication2\WebApplication2.csproj", "{A529703D-B9B9-48EB-89DF-61D071451373}"
@@ -21,10 +19,6 @@ Global
 		{DF900077-6D45-FEBB-C5CD-972CBA61739D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DF900077-6D45-FEBB-C5CD-972CBA61739D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DF900077-6D45-FEBB-C5CD-972CBA61739D}.Release|Any CPU.Build.0 = Release|Any CPU
-		{2482EF2F-9021-4AD9-87E7-54AA5C3D3BC8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{2482EF2F-9021-4AD9-87E7-54AA5C3D3BC8}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{2482EF2F-9021-4AD9-87E7-54AA5C3D3BC8}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{2482EF2F-9021-4AD9-87E7-54AA5C3D3BC8}.Release|Any CPU.Build.0 = Release|Any CPU
 		{A0A5516F-CF94-4F6B-6308-242CCA1A71A5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{A0A5516F-CF94-4F6B-6308-242CCA1A71A5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A0A5516F-CF94-4F6B-6308-242CCA1A71A5}.Release|Any CPU.ActiveCfg = Release|Any CPU
