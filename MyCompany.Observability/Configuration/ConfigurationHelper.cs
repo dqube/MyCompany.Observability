@@ -15,7 +15,7 @@ namespace MyCompany.Observability.Configuration
     public static class ConfigurationHelper
     {
 #if NETFRAMEWORK
-        public static ObservabilityOptions LoadFromAppConfig(string sectionName = "observability")
+        public static ObservabilityOptions LoadFromAppSettings(string sectionName = "Observability")
         {
             var options = new ObservabilityOptions();
             
@@ -35,6 +35,13 @@ namespace MyCompany.Observability.Configuration
             // Load log level
             if (Enum.TryParse<LogLevel>(ConfigurationManager.AppSettings[$"{sectionName}:LogLevel"], out LogLevel logLevel))
                 options.LogLevel = logLevel;
+            
+            // Load logging configuration
+            if (bool.TryParse(ConfigurationManager.AppSettings[$"{sectionName}:Logging:EnableConsoleLogging"], out bool enableConsoleLogging))
+                options.Logging.EnableConsoleLogging = enableConsoleLogging;
+                
+            if (Enum.TryParse<Microsoft.Extensions.Logging.LogLevel>(ConfigurationManager.AppSettings[$"{sectionName}:Logging:MinimumLevel"], out Microsoft.Extensions.Logging.LogLevel minimumLevel))
+                options.Logging.MinimumLevel = minimumLevel;
             
             // Load export settings
             if (int.TryParse(ConfigurationManager.AppSettings[$"{sectionName}:ExportBatchSize"], out int batchSize))
@@ -98,11 +105,27 @@ namespace MyCompany.Observability.Configuration
             var includeContentTypes = ConfigurationManager.AppSettings[$"{sectionName}:RequestResponseLogging:IncludeContentTypes"];
             if (!string.IsNullOrEmpty(includeContentTypes))
             {
-                options.RequestResponseLogging.IncludeContentTypes = includeContentTypes.Split(',', ';')
-                    .Select(ct => ct.Trim())
-                    .Where(ct => !string.IsNullOrEmpty(ct))
-                    .ToList();
+                options.RequestResponseLogging.IncludeContentTypes.Clear();
+                options.RequestResponseLogging.IncludeContentTypes.AddRange(
+                    includeContentTypes.Split(',', ';')
+                        .Select(ct => ct.Trim())
+                        .Where(ct => !string.IsNullOrEmpty(ct))
+                );
             }
+            
+            // Load tracing configuration
+            if (bool.TryParse(ConfigurationManager.AppSettings[$"{sectionName}:Tracing:EnableHttpServerInstrumentation"], out bool enableHttpServerTracing))
+                options.Tracing.EnableHttpServerInstrumentation = enableHttpServerTracing;
+                
+            if (bool.TryParse(ConfigurationManager.AppSettings[$"{sectionName}:Tracing:EnableHttpClientInstrumentation"], out bool enableHttpClientTracing))
+                options.Tracing.EnableHttpClientInstrumentation = enableHttpClientTracing;
+            
+            // Load metrics configuration
+            if (bool.TryParse(ConfigurationManager.AppSettings[$"{sectionName}:Metrics:EnableHttpServerMetrics"], out bool enableHttpServerMetrics))
+                options.Metrics.EnableHttpServerMetrics = enableHttpServerMetrics;
+                
+            if (bool.TryParse(ConfigurationManager.AppSettings[$"{sectionName}:Metrics:EnableHttpClientMetrics"], out bool enableHttpClientMetrics))
+                options.Metrics.EnableHttpClientMetrics = enableHttpClientMetrics;
             
             // Load service attributes
             var attributeKeys = ConfigurationManager.AppSettings.AllKeys

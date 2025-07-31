@@ -169,7 +169,7 @@ namespace MyCompany.Observability.Console
 #if NETFRAMEWORK
         public static IServiceProvider BuildConsoleObservabilityFromAppConfig(string sectionName = "observability")
         {
-            var options = ConfigurationHelper.LoadFromAppConfig(sectionName);
+            var options = ConfigurationHelper.LoadFromAppSettings(sectionName);
             return BuildConsoleObservability(opt => 
             {
                 opt.ServiceName = options.ServiceName;

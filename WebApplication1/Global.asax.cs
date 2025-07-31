@@ -35,27 +35,31 @@ namespace WebApplication1
         {
             var services = new ServiceCollection();
             
-            // Add logging services for .NET Framework
-            services.AddLogging(builder =>
-            {
-                builder.SetMinimumLevel(Microsoft.Extensions.Logging.LogLevel.Information);
-            });
+            // Load configuration from web.config appSettings
+            var configOptions = ConfigurationHelper.LoadFromAppSettings();
             
-            // Add observability services
+            // Add observability services with configuration from web.config
             services.AddObservability(options =>
             {
-                options.ServiceName = "WebApplication1";
-                options.ServiceVersion = "1.0.0";
-                options.EnableRequestResponseLogging = true;
+                // Copy all configuration from web.config
+                options.ServiceName = configOptions.ServiceName;
+                options.ServiceVersion = configOptions.ServiceVersion;
+                options.EnableRequestResponseLogging = configOptions.EnableRequestResponseLogging;
                 
-                // Configure request/response logging
-                options.RequestResponseLogging.LogRequestBody = true;
-                options.RequestResponseLogging.LogResponseBody = true;
-                options.RequestResponseLogging.LogRequestHeaders = true;
-                options.RequestResponseLogging.LogResponseHeaders = true;
-                options.RequestResponseLogging.IncludeContentTypes.Add("application/json");
-                options.RequestResponseLogging.IncludeContentTypes.Add("application/xml");
-                options.RequestResponseLogging.IncludeContentTypes.Add("text/plain");
+                // Copy logging configuration
+                options.Logging = configOptions.Logging;
+                
+                // Copy request/response logging configuration
+                options.RequestResponseLogging = configOptions.RequestResponseLogging;
+                
+                // Copy exporter configuration
+                options.Exporter = configOptions.Exporter;
+                
+                // Copy tracing configuration
+                options.Tracing = configOptions.Tracing;
+                
+                // Copy metrics configuration
+                options.Metrics = configOptions.Metrics;
             });
 
             // Add request response logging registration

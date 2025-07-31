@@ -31,7 +31,7 @@ namespace MyCompany.Observability.Framework
                 try
                 {
                     // Load configuration from app.config/web.config
-                    _options = ConfigurationHelper.LoadFromAppConfig();
+                    _options = Configuration.ConfigurationHelper.LoadFromAppSettings();
 
                     // Create core services
                     _redactionService = new RedactionService(_options.Redaction);

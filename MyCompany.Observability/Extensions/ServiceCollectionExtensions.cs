@@ -59,6 +59,27 @@ namespace MyCompany.Observability.Extensions
             var options = new ObservabilityOptions();
             configureOptions(options);
 
+            // Add logging services - this ensures ILoggerFactory is available
+            services.AddLogging(builder =>
+            {
+                builder.SetMinimumLevel(options.Logging?.MinimumLevel ?? Microsoft.Extensions.Logging.LogLevel.Information);
+                
+                // Apply category-specific log levels
+                if (options.Logging?.CategoryLevels != null)
+                {
+                    foreach (var categoryLevel in options.Logging.CategoryLevels)
+                    {
+                        builder.AddFilter(categoryLevel.Key, categoryLevel.Value);
+                    }
+                }
+                
+                // Add console logging if enabled in options
+                if (options.Logging?.EnableConsoleLogging == true)
+                {
+                    builder.AddConsole();
+                }
+            });
+
             services.AddSingleton(options);
             services.AddSingleton<IRedactionService>(provider => new RedactionService(options.Redaction));
 

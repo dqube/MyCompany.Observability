@@ -19,17 +19,29 @@ namespace MyCompany.Observability.Extensions
             if (app == null) throw new ArgumentNullException(nameof(app));
             if (serviceProvider == null) throw new ArgumentNullException(nameof(serviceProvider));
 
-            // Create a simple logger factory instead of relying on DI
-            if (_loggerFactory == null)
+            // Try to get logger factory from service provider first
+            ILoggerFactory loggerFactory;
+            try
             {
-                _loggerFactory = Microsoft.Extensions.Logging.LoggerFactory.Create(builder => 
+                loggerFactory = serviceProvider.GetRequiredService<ILoggerFactory>();
+                // Successfully obtained ILoggerFactory from service provider
+            }
+            catch (InvalidOperationException)
+            {
+                // Create a fallback logger factory if not available from DI
+                if (_loggerFactory == null)
                 {
-                    builder.SetMinimumLevel(Microsoft.Extensions.Logging.LogLevel.Information);
-                });
+                    _loggerFactory = Microsoft.Extensions.Logging.LoggerFactory.Create(builder => 
+                    {
+                        builder.SetMinimumLevel(Microsoft.Extensions.Logging.LogLevel.Information);
+                    });
+                }
+                loggerFactory = _loggerFactory;
+                // ILoggerFactory not available from DI, using fallback factory
             }
 
             // Set the logger factory for controllers to use
-            Framework.LoggerFactoryProvider.SetLoggerFactory(_loggerFactory);
+            Framework.LoggerFactoryProvider.SetLoggerFactory(loggerFactory);
 
             var options = serviceProvider.GetRequiredService<ObservabilityOptions>();
             var redactionService = serviceProvider.GetRequiredService<IRedactionService>();
@@ -39,7 +51,7 @@ namespace MyCompany.Observability.Extensions
             var metricsService = serviceProvider.GetService<IMetricsService>();
 
             ServiceCollectionExtensions.ConfigureRequestResponseLogging(
-                _loggerFactory, 
+                loggerFactory, 
                 options, 
                 redactionService, 
                 tracingService, 

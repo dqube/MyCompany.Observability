@@ -29,6 +29,7 @@ namespace MyCompany.Observability.Configuration
         public RequestResponseLoggingOptions RequestResponseLogging { get; set; } = new RequestResponseLoggingOptions();
         public TracingOptions Tracing { get; set; } = new TracingOptions();
         public MetricsOptions Metrics { get; set; } = new MetricsOptions();
+        public LoggingOptions Logging { get; set; } = new LoggingOptions();
         public Dictionary<string, string> ServiceAttributes { get; set; } = new Dictionary<string, string>();
     }
 
@@ -94,6 +95,13 @@ namespace MyCompany.Observability.Configuration
         public int MaxMetricPointsPerMetric { get; set; } = 2000;
         public TimeSpan MetricExportInterval { get; set; } = TimeSpan.FromMinutes(1);
         public TimeSpan MetricExportTimeout { get; set; } = TimeSpan.FromSeconds(30);
+    }
+
+    public class LoggingOptions
+    {
+        public bool EnableConsoleLogging { get; set; } = true;
+        public Microsoft.Extensions.Logging.LogLevel MinimumLevel { get; set; } = Microsoft.Extensions.Logging.LogLevel.Information;
+        public Dictionary<string, Microsoft.Extensions.Logging.LogLevel> CategoryLevels { get; set; } = new Dictionary<string, Microsoft.Extensions.Logging.LogLevel>();
     }
 
     public enum LogLevel
