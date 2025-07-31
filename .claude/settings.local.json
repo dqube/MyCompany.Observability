@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dotnet --info)",
+      "Bash(dotnet build:*)",
+      "Bash(dotnet test:*)",
+      "Bash(dotnet restore:*)",
+      "Bash(mkdir:*)",
+      "Bash(move:*)",
+      "Bash(rmdir:*)",
+      "Bash(mv:*)",
+      "Bash(dotnet run:*)",
+      "Bash(\"C:\\Program Files\\Microsoft Visual Studio\\2022\\Professional\\MSBuild\\Current\\Bin\\MSBuild.exe\" WebApplication1.csproj /p:Configuration=Debug)",
+      "Bash(msbuild:*)"
+    ],
+    "deny": []
+  }
+}
