@@ -123,25 +123,7 @@ namespace MyCompany.Observability.Framework
             return _metricsService!;
         }
 
-        /// <summary>
-        /// Get a logger instance for the specified type
-        /// </summary>
-        /// <typeparam name="T">The type to create a logger for</typeparam>
-        /// <returns>A simple logger instance</returns>
-        public static ISimpleLogger GetLogger<T>()
-        {
-            return SimpleLoggerFactory.CreateLogger<T>();
-        }
-
-        /// <summary>
-        /// Get a logger instance for the specified category name
-        /// </summary>
-        /// <param name="categoryName">The category name for the logger</param>
-        /// <returns>A simple logger instance</returns>
-        public static ISimpleLogger GetLogger(string categoryName)
-        {
-            return SimpleLoggerFactory.CreateLogger(categoryName);
-        }
+      
 
         /// <summary>
         /// Check if the observability services have been initialized

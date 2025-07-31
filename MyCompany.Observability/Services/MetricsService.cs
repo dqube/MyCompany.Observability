@@ -18,6 +18,10 @@ namespace MyCompany.Observability.Services
         void RecordErrorCount(string errorType, string operation);
         void SetActiveConnections(int count);
         void RecordDatabaseQueryDuration(double durationMs, string operation, string table);
+        
+        // HTTP Server metrics for .NET Framework
+        void IncrementActiveRequests();
+        void DecrementActiveRequests();
     }
 
     public class MetricsService : IMetricsService
@@ -30,6 +34,7 @@ namespace MyCompany.Observability.Services
         private readonly Histogram<double> _requestDuration;
         private readonly Counter<double> _errorCounter;
         private readonly UpDownCounter<int> _activeConnections;
+        private readonly UpDownCounter<int> _activeRequests;
         private readonly Histogram<double> _databaseQueryDuration;
         
         // Custom metric instruments cache
@@ -61,6 +66,10 @@ namespace MyCompany.Observability.Services
             _activeConnections = _meter.CreateUpDownCounter<int>(
                 "active_connections",
                 description: "Number of active connections");
+
+            _activeRequests = _meter.CreateUpDownCounter<int>(
+                "http_server_active_requests",
+                description: "Number of active HTTP requests");
 
             _databaseQueryDuration = _meter.CreateHistogram<double>(
                 "database_query_duration_ms",
@@ -187,6 +196,16 @@ namespace MyCompany.Observability.Services
             };
 
             _databaseQueryDuration.Record(durationMs, EnrichTags(tags));
+        }
+
+        public void IncrementActiveRequests()
+        {
+            _activeRequests.Add(1);
+        }
+
+        public void DecrementActiveRequests()
+        {
+            _activeRequests.Add(-1);
         }
 
         private KeyValuePair<string, object?>[] EnrichTags(KeyValuePair<string, object?>[] originalTags)

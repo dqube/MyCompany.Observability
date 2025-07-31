@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Configuration;
 #else
 using System;
 using System.Collections.Generic;
@@ -22,21 +21,20 @@ using OpenTelemetry.Trace;
 using MyCompany.Observability.Configuration;
 using MyCompany.Observability.Services;
 using MyCompany.Observability.Instrumentation;
+#if NETFRAMEWORK
+using MyCompany.Observability.Framework;
+#endif
 
 namespace MyCompany.Observability.Extensions
 {
     public static class ServiceCollectionExtensions
     {
+#if !NETFRAMEWORK
         public static IServiceCollection AddObservability(
             this IServiceCollection services,
             IConfiguration configuration,
-#if NETFRAMEWORK
             string? serviceName = null,
             string? serviceVersion = null)
-#else
-            string? serviceName = null,
-            string? serviceVersion = null)
-#endif
         {
             return services.AddObservability(config =>
             {
@@ -49,6 +47,7 @@ namespace MyCompany.Observability.Extensions
                     config.ServiceVersion = serviceVersion;
             });
         }
+#endif
 
         public static IServiceCollection AddObservability(
             this IServiceCollection services,
@@ -194,15 +193,26 @@ namespace MyCompany.Observability.Extensions
 #endif
 
 #if NETFRAMEWORK
-        public static IServiceCollection AddRequestResponseLogging(this IServiceCollection services,
+        public static IServiceCollection AddRequestResponseLogging(this IServiceCollection services)
+        {
+            // For .NET Framework, HTTP module registration is handled in web.config
+            // This method ensures the required services are available for the module
+            return services;
+        }
+
+        public static void ConfigureRequestResponseLogging(
             ILoggerFactory loggerFactory,
             ObservabilityOptions options,
-            IRedactionService redactionService)
+            IRedactionService redactionService,
+            ITracingService tracingService = null,
+            IMetricsService metricsService = null)
         {
-            // TODO: Re-enable once RequestResponseLoggingHandler is properly compiled for all .NET Framework versions
-            // services.AddSingleton(provider => 
-            //     new Middleware.RequestResponseLoggingHandler(loggerFactory, options, redactionService));
-            return services;
+            Framework.RequestResponseLoggingModule.Configure(
+                loggerFactory, 
+                options, 
+                redactionService, 
+                tracingService, 
+                metricsService);
         }
 #endif
     }

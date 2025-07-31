@@ -11,7 +11,14 @@
       "Bash(mv:*)",
       "Bash(dotnet run:*)",
       "Bash(\"C:\\Program Files\\Microsoft Visual Studio\\2022\\Professional\\MSBuild\\Current\\Bin\\MSBuild.exe\" WebApplication1.csproj /p:Configuration=Debug)",
-      "Bash(msbuild:*)"
+      "Bash(msbuild:*)",
+      "WebFetch(domain:opentelemetry.io)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:learn.microsoft.com)",
+      "WebFetch(domain:www.jimmybogard.com)",
+      "Bash(nuget restore:*)",
+      "Bash(nuget install:*)",
+      "Bash(rm:*)"
     ],
     "deny": []
   }
