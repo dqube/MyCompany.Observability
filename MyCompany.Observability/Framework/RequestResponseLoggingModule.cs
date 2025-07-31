@@ -39,19 +39,26 @@ namespace MyCompany.Observability.Framework
 
         public void Init(HttpApplication context)
         {
-            if (_options?.EnableRequestResponseLogging == true)
-            {
-                context.BeginRequest += OnBeginRequest;
-                context.EndRequest += OnEndRequest;
-                context.Error += OnError;
-            }
+            // Always subscribe to events for tracing, regardless of logging settings
+            context.BeginRequest += OnBeginRequest;
+            context.EndRequest += OnEndRequest;
+            context.Error += OnError;
+            
+            _logger?.LogInformation("RequestResponseLoggingModule initialized. Options enabled: {LoggingEnabled}, TracingService available: {TracingAvailable}", 
+                _options?.EnableRequestResponseLogging, 
+                _tracingService != null);
         }
 
         private void OnBeginRequest(object sender, EventArgs e)
         {
             var context = HttpContext.Current;
             if (context == null)
+            {
+                _logger?.LogWarning("HttpContext.Current is null in OnBeginRequest");
                 return;
+            }
+            
+            _logger?.LogInformation("OnBeginRequest called for {Method} {Path}", context.Request.HttpMethod, context.Request.Url?.AbsolutePath);
 
             var requestId = Guid.NewGuid().ToString();
             var startTime = DateTime.UtcNow;
@@ -77,14 +84,27 @@ namespace MyCompany.Observability.Framework
             Activity? activity = null;
             if (_tracingService != null)
             {
+                _logger?.LogInformation("Creating activity for {Method} {Path} with TracingService", method, path);
+                
                 // Create activity with parent context if available
                 if (parentContext.HasValue)
                 {
+                    _logger?.LogInformation("Creating activity with parent context: {ParentId}", parentContext.Value.TraceId);
                     activity = _tracingService.StartActivity($"HTTP {method}", ActivityKind.Server, parentContext.Value);
                 }
                 else
                 {
+                    _logger?.LogInformation("Creating activity without parent context");
                     activity = _tracingService.StartActivity($"HTTP {method}", ActivityKind.Server);
+                }
+
+                if (activity != null)
+                {
+                    _logger?.LogInformation("Activity created successfully with ID: {ActivityId}", activity.Id);
+                }
+                else
+                {
+                    _logger?.LogWarning("Activity creation failed - returned null");
                 }
 
                 if (activity != null)
@@ -123,8 +143,13 @@ namespace MyCompany.Observability.Framework
                     
                     // Set as current activity for .NET Framework
                     Activity.Current = activity;
+                    _logger?.LogInformation("Set Activity.Current to: {ActivityId}", activity.Id);
                     context.Items["Activity"] = activity;
                 }
+            }
+            else
+            {
+                _logger?.LogWarning("TracingService is null - cannot create activity for {Method} {Path}", method, path);
             }
 
             // Record metrics - active requests counter

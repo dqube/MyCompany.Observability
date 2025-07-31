@@ -31,6 +31,16 @@ namespace MyCompany.Observability.Services
         public Activity? StartActivity(string name, ActivityKind kind = ActivityKind.Internal)
         {
             var activity = _activitySource.StartActivity(name, kind);
+            
+            // For .NET Framework, if no listener is present, try to create activity manually
+            if (activity == null)
+            {
+                // Create activity manually if no listener is subscribed
+                activity = new Activity(name);
+                activity.SetParentId(Activity.Current?.Id);
+                activity.Start();
+            }
+            
             EnrichActivity(activity);
             return activity;
         }
@@ -38,6 +48,16 @@ namespace MyCompany.Observability.Services
         public Activity? StartActivity(string name, ActivityKind kind, ActivityContext parentContext)
         {
             var activity = _activitySource.StartActivity(name, kind, parentContext);
+            
+            // For .NET Framework, if no listener is present, try to create activity manually
+            if (activity == null)
+            {
+                // Create activity manually if no listener is subscribed
+                activity = new Activity(name);
+                activity.SetParentId(parentContext.TraceId.ToString());
+                activity.Start();
+            }
+            
             EnrichActivity(activity);
             return activity;
         }
@@ -45,6 +65,17 @@ namespace MyCompany.Observability.Services
         public Activity? StartActivity(string name, ActivityKind kind, string parentId)
         {
             var activity = _activitySource.StartActivity(name, kind, parentId);
+            
+            // For .NET Framework, if no listener is present, try to create activity manually
+            if (activity == null)
+            {
+                // Create activity manually if no listener is subscribed
+                activity = new Activity(name);
+                if (!string.IsNullOrEmpty(parentId))
+                    activity.SetParentId(parentId);
+                activity.Start();
+            }
+            
             EnrichActivity(activity);
             return activity;
         }
