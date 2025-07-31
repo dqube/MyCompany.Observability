@@ -20,7 +20,7 @@ namespace WebApplication1.App_Start
             var options = ConfigurationHelper.LoadFromAppConfig();
 
             // Register observability services
-            services.AddMyCompanyObservability(opt =>
+            services.AddObservability(opt =>
             {
                 opt.ServiceName = options.ServiceName;
                 opt.ServiceVersion = options.ServiceVersion;

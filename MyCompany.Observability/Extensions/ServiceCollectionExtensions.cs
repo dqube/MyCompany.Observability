@@ -27,7 +27,7 @@ namespace MyCompany.Observability.Extensions
 {
     public static class ServiceCollectionExtensions
     {
-        public static IServiceCollection AddMyCompanyObservability(
+        public static IServiceCollection AddObservability(
             this IServiceCollection services,
             IConfiguration configuration,
 #if NET462
@@ -38,7 +38,7 @@ namespace MyCompany.Observability.Extensions
             string? serviceVersion = null)
 #endif
         {
-            return services.AddMyCompanyObservability(config =>
+            return services.AddObservability(config =>
             {
                 configuration.GetSection("Observability").Bind(config);
                 
@@ -50,7 +50,7 @@ namespace MyCompany.Observability.Extensions
             });
         }
 
-        public static IServiceCollection AddMyCompanyObservability(
+        public static IServiceCollection AddObservability(
             this IServiceCollection services,
             Action<ObservabilityOptions> configureOptions)
         {
