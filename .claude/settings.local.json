@@ -24,7 +24,8 @@
       "Bash(dotnet remove:*)",
       "Bash(dotnet remove package:*)",
       "Bash(tasklist:*)",
-      "Bash(taskkill:*)"
+      "Bash(taskkill:*)",
+      "Bash(powershell:*)"
     ],
     "deny": []
   }

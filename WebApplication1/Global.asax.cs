@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Web;
 using System.Web.Http;
@@ -66,6 +67,19 @@ namespace WebApplication1
             services.AddRequestResponseLogging();
 
             _serviceProvider = services.BuildServiceProvider();
+
+            // Get the logger factory and create a test logger to verify logging is working
+            var loggerFactory = _serviceProvider.GetRequiredService<ILoggerFactory>();
+            var logger = loggerFactory.CreateLogger<WebApiApplication>();
+            
+            // Test log message to verify logging is working
+            logger.LogInformation("WebApplication1 observability initialized successfully - ServiceName: {ServiceName}, ServiceVersion: {ServiceVersion}", 
+                configOptions.ServiceName, configOptions.ServiceVersion);
+            
+            // Also write to Debug output for immediate visibility
+            Debug.WriteLine($"[WebApplication1] Observability initialized - Service: {configOptions.ServiceName} v{configOptions.ServiceVersion}");
+            Debug.WriteLine($"[WebApplication1] Console logging enabled: {configOptions.Logging?.EnableConsoleLogging}");
+            Debug.WriteLine($"[WebApplication1] Request/Response logging enabled: {configOptions.EnableRequestResponseLogging}");
 
             // Configure the HTTP module - this is just registration, no implementation logic here
             this.UseRequestResponseLogging(_serviceProvider);

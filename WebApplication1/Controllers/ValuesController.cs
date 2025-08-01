@@ -6,10 +6,10 @@ using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Web.Http;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using MyCompany.Observability.Framework;
-
+using MyCompany.Observability.Extensions;
+using Microsoft.Extensions.Logging;
 namespace WebApplication1.Controllers
 {
     public class ValuesController : ApiController
@@ -25,7 +25,8 @@ namespace WebApplication1.Controllers
         public IEnumerable<string> Get()
         {
             _logger.LogInformation("Starting to process GET request for all values");
-            
+            var userDetails = new { username = "DemoUser", role = "User", password = "test" };
+            _logger.LogInformation("User details: {@UserDetails}", userDetails);
             // Demonstrate that Activity.Current is available and working
             var currentActivity = Activity.Current;
             if (currentActivity != null)
@@ -172,5 +173,25 @@ namespace WebApplication1.Controllers
             
             _logger.LogInformation("DELETE request completed for ID: {ValueId}", id);
         }
+        [HttpGet]
+        [Route("api/values/userdetails")]
+        public IHttpActionResult GetUserDetails()
+        {
+            _logger.LogInformation("Retrieving user details");
+            var userDetails = new UserDetails
+            {
+                Username = "DemoUser",
+                Role = "User",
+                Password = "test" // Sensitive data, should be redacted in production logs
+            };
+            _logger.LogInformation("User details retrieved: {@UserDetails}", userDetails);
+            return Ok(userDetails);
+        }
+    }
+    public class UserDetails
+    {
+        public string Username { get; set; } = string.Empty;
+        public string Role { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty; // Sensitive data, should be redacted
     }
 }

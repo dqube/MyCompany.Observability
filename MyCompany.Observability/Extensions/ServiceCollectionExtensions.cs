@@ -78,8 +78,26 @@ namespace MyCompany.Observability.Extensions
                 // Add console logging if enabled in options
                 if (options.Logging?.EnableConsoleLogging == true)
                 {
-                    builder.AddConsole();
+#if NETFRAMEWORK
+                    // For .NET Framework, add Debug provider for Visual Studio Output window with JSON formatting
+                    builder.AddDebug();
+                    // Also add EventLog provider for Windows Event Log (optional)
+                    // builder.AddEventLog();
+#else
+                    builder.AddConsole(console =>
+                    {
+                        console.FormatterName = "json";
+                    });
+                    builder.AddJsonConsole();
+#endif
                 }
+                
+                // Configure structured logging to always format as JSON
+                builder.Configure(options => 
+                {
+                    // Ensure structured logging outputs JSON format
+                    options.ActivityTrackingOptions = ActivityTrackingOptions.SpanId | ActivityTrackingOptions.TraceId | ActivityTrackingOptions.ParentId;
+                });
             });
 
             services.AddSingleton(options);
