@@ -1,11 +1,13 @@
 #if NETFRAMEWORK
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 #else
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Configuration;
@@ -112,9 +114,13 @@ namespace MyCompany.Observability.Extensions
                                     (options.Exporter.EnableOtlp && string.IsNullOrWhiteSpace(options.Exporter.OtlpEndpoint));
             var useOtlpExporter = options.Exporter.EnableOtlp && !string.IsNullOrWhiteSpace(options.Exporter.OtlpEndpoint);
 
-            services.AddOpenTelemetry()
-                .ConfigureResource(resource => resource = resourceBuilder)
-                .WithTracing(tracing =>
+            var openTelemetryBuilder = services.AddOpenTelemetry()
+                .ConfigureResource(resource => resource = resourceBuilder);
+
+            // Conditionally add tracing based on configuration
+            if (options.Tracing.EnableCustomInstrumentation)
+            {
+                openTelemetryBuilder.WithTracing(tracing =>
                 {
                     // Add custom activity source
                     tracing.AddSource(InstrumentationSources.ActivitySourceName);
@@ -151,8 +157,13 @@ namespace MyCompany.Observability.Extensions
                                 otlpOptions.Headers += $"{header.Key}={header.Value},";
                             }
                         });
-                })
-                .WithMetrics(metrics =>
+                });
+            }
+
+            // Conditionally add metrics based on configuration
+            if (options.Metrics.EnableCustomMetrics)
+            {
+                openTelemetryBuilder.WithMetrics(metrics =>
                 {
                     // Add custom meter
                     metrics.AddMeter(InstrumentationSources.MeterName);
@@ -186,22 +197,25 @@ namespace MyCompany.Observability.Extensions
                                 otlpOptions.Headers += $"{header.Key}={header.Value},";
                             }
                         });
-                })
-                .WithLogging(logging =>
-                {
-                    if (useConsoleExporter)
-                        logging.AddConsoleExporter();
-
-                    if (useOtlpExporter)
-                        logging.AddOtlpExporter(otlpOptions =>
-                        {
-                            otlpOptions.Endpoint = new Uri(options.Exporter.OtlpEndpoint);
-                            foreach (var header in options.Exporter.Headers)
-                            {
-                                otlpOptions.Headers += $"{header.Key}={header.Value},";
-                            }
-                        });
                 });
+            }
+
+            // Always add logging (it's typically needed for observability)
+            openTelemetryBuilder.WithLogging(logging =>
+            {
+                if (useConsoleExporter)
+                    logging.AddConsoleExporter();
+
+                if (useOtlpExporter)
+                    logging.AddOtlpExporter(otlpOptions =>
+                    {
+                        otlpOptions.Endpoint = new Uri(options.Exporter.OtlpEndpoint);
+                        foreach (var header in options.Exporter.Headers)
+                        {
+                            otlpOptions.Headers += $"{header.Key}={header.Value},";
+                        }
+                    });
+            });
 
             return services;
         }

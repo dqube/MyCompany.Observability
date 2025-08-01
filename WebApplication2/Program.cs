@@ -1,4 +1,5 @@
 using MyCompany.Observability.Extensions;
+using Scalar.AspNetCore;
 
 namespace WebApplication2
 {
@@ -23,6 +24,7 @@ namespace WebApplication2
             if (app.Environment.IsDevelopment())
             {
                 app.MapOpenApi();
+                app.MapScalarApiReference();
             }
 
             app.UseHttpsRedirection();
@@ -39,6 +41,8 @@ namespace WebApplication2
 
             app.MapGet("/weatherforecast", (HttpContext httpContext, ILogger<Program> logger) =>
             {
+                var userDetails = new { username = "DemoUser", role = "User", password="test" };
+                logger.LogInformation("User details: {@UserDetails}", userDetails);
                 logger.LogInformation("Getting weather forecast for request {RequestId}", httpContext.TraceIdentifier);
                 
                 var forecast = Enumerable.Range(1, 5).Select(index =>
@@ -62,8 +66,19 @@ namespace WebApplication2
                 return Results.Ok(new { Status = "Healthy", Timestamp = DateTime.UtcNow });
             })
             .WithName("HealthCheck");
-
-            app.Run();
+            app.MapPost("/userdetails", (UserDetails userDetails, ILogger<Program> logger) =>
+            {
+                // Use the {@UserDetails} syntax to trigger serialization and redaction
+                logger.LogInformation("Received user details: {@UserDetails}", userDetails);
+                return Results.Ok(userDetails);
+            });
+                app.Run();
         }
+    }
+    public class UserDetails
+    {
+        public string Username { get; set; } = string.Empty;
+        public string Role { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty; // Sensitive data, should be redacted
     }
 }

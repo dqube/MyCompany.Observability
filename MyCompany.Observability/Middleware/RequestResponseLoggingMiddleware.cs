@@ -149,7 +149,7 @@ namespace MyCompany.Observability.Middleware
                 Body = await GetResponseBodyAsync(response)
             };
 
-            var logLevel = response.StatusCode >= 400 ? Microsoft.Extensions.Logging.LogLevel.Warning : Microsoft.Extensions.Logging.LogLevel.Information;
+            var logLevel = response.StatusCode >= 400 ? LogLevel.Warning : LogLevel.Information;
             _logger.Log(logLevel, "HTTP Response: {@ResponseInfo}", responseInfo);
         }
 
@@ -281,7 +281,7 @@ namespace MyCompany.Observability.Middleware
                 Body = await GetHttpResponseBodyAsync(response)
             };
 
-            var logLevel = (int)response.StatusCode >= 400 ? Microsoft.Extensions.Logging.LogLevel.Warning : Microsoft.Extensions.Logging.LogLevel.Information;
+            var logLevel = (int)response.StatusCode >= 400 ? LogLevel.Warning : LogLevel.Information;
             _logger.Log(logLevel, "HTTP Response: {@ResponseInfo}", responseInfo);
         }
 

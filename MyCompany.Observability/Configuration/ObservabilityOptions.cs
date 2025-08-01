@@ -21,7 +21,7 @@ namespace MyCompany.Observability.Configuration
 #endif
         public bool EnableRequestResponseLogging { get; set; } = true;
         public bool EnableRedaction { get; set; } = true;
-        public LogLevel LogLevel { get; set; } = LogLevel.Information;
+        public LogSeverity LogLevel { get; set; } = LogSeverity.Information;
         public int ExportBatchSize { get; set; } = 100;
         public TimeSpan ExportTimeout { get; set; } = TimeSpan.FromSeconds(30);
         public ExporterOptions Exporter { get; set; } = new ExporterOptions();
@@ -104,7 +104,7 @@ namespace MyCompany.Observability.Configuration
         public Dictionary<string, Microsoft.Extensions.Logging.LogLevel> CategoryLevels { get; set; } = new Dictionary<string, Microsoft.Extensions.Logging.LogLevel>();
     }
 
-    public enum LogLevel
+    public enum LogSeverity
     {
         Trace = 0,
         Debug = 1,

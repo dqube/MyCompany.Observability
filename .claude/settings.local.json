@@ -1,4 +1,5 @@
 {
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "permissions": {
     "allow": [
       "Bash(dotnet --info)",
@@ -18,7 +19,12 @@
       "WebFetch(domain:www.jimmybogard.com)",
       "Bash(nuget restore:*)",
       "Bash(nuget install:*)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(dotnet add package:*)",
+      "Bash(dotnet remove:*)",
+      "Bash(dotnet remove package:*)",
+      "Bash(tasklist:*)",
+      "Bash(taskkill:*)"
     ],
     "deny": []
   }

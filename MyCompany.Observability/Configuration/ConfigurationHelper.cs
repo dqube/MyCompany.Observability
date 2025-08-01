@@ -33,7 +33,7 @@ namespace MyCompany.Observability.Configuration
                 options.EnableRedaction = enableRedaction;
             
             // Load log level
-            if (Enum.TryParse<LogLevel>(ConfigurationManager.AppSettings[$"{sectionName}:LogLevel"], out LogLevel logLevel))
+            if (Enum.TryParse<LogSeverity>(ConfigurationManager.AppSettings[$"{sectionName}:LogLevel"], out LogSeverity logLevel))
                 options.LogLevel = logLevel;
             
             // Load logging configuration
