@@ -43,10 +43,7 @@ namespace MyCompany.Observability.Configuration
 
     public class RedactionOptions
     {
-        public List<string> SensitiveKeys { get; set; } = new List<string>
-        {
-            "password", "token", "key", "secret", "authorization", "api-key", "x-api-key"
-        };
+        public List<string> SensitiveKeys { get; set; } = new List<string>();
         public string RedactionText { get; set; } = "[REDACTED]";
         public bool RedactHeaders { get; set; } = true;
         public bool RedactQueryParams { get; set; } = true;

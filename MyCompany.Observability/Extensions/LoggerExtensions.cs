@@ -1,8 +1,14 @@
 using System;
+using System.Collections.Generic;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using MyCompany.Observability.Services;
+#if NETFRAMEWORK
+using System.Web;
+#else
+using Microsoft.AspNetCore.Http;
+#endif
 
 #if NET462
 namespace MyCompany.Observability.Extensions
@@ -20,7 +26,8 @@ public static class LoggerExtensions
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         WriteIndented = false,
-        DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
+        DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
+        Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
     };
 
     /// <summary>
@@ -40,6 +47,55 @@ public static class LoggerExtensions
         {
             // Use Log method directly to avoid calling our own extension
             logger.Log(LogLevel.Information, template, obj);
+        }
+    }
+
+    /// <summary>
+    /// Logs an information message with multiple objects that are automatically serialized and redacted
+    /// </summary>
+    /// <param name="logger">The logger instance</param>
+    /// <param name="message">The message template</param>
+    /// <param name="args">Arguments to serialize and include in the log</param>
+    public static void LogInfo(this ILogger logger, string message, params object[] args)
+    {
+        if (!logger.IsEnabled(LogLevel.Information) || args == null || args.Length == 0)
+        {
+            logger.Log(LogLevel.Information, message);
+            return;
+        }
+
+        try
+        {
+            // Process arguments for serialization and redaction
+            var processedArgs = new object[args.Length];
+            for (int i = 0; i < args.Length; i++)
+            {
+                if (args[i] != null)
+                {
+                    // Check if this should be serialized (complex object) or used as-is (primitive)
+                    if (ShouldSerialize(args[i]))
+                    {
+                        // Use the same approach as SerializeAndRedactObject
+                        processedArgs[i] = SerializeAndRedactObject(logger, args[i]);
+                    }
+                    else
+                    {
+                        processedArgs[i] = args[i];
+                    }
+                }
+                else
+                {
+                    processedArgs[i] = null;
+                }
+            }
+
+            logger.Log(LogLevel.Information, message, processedArgs);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error processing logged objects");
+            // Fallback to original logging without processing
+            logger.Log(LogLevel.Information, message, args);
         }
     }
 
@@ -115,26 +171,61 @@ public static class LoggerExtensions
         }
     }
 
-    private static string SerializeAndRedactObject<T>(ILogger logger, T obj) where T : class
+    private static bool ShouldSerialize(object obj)
+    {
+        if (obj == null) return false;
+        
+        var type = obj.GetType();
+        
+        // Don't serialize primitive types, strings, dates, etc.
+        if (type.IsPrimitive || 
+            type == typeof(string) || 
+            type == typeof(DateTime) || 
+            type == typeof(DateTimeOffset) || 
+            type == typeof(TimeSpan) || 
+            type == typeof(Guid) || 
+            type == typeof(decimal) ||
+            type.IsEnum)
+        {
+            return false;
+        }
+        
+        // Serialize complex objects, arrays, collections, anonymous types, etc.
+        return true;
+    }
+
+    private static string SerializeAndRedact(object obj, IRedactionService? redactionService)
+    {
+        try
+        {
+            var json = JsonSerializer.Serialize(obj, DefaultJsonOptions);
+            return redactionService?.RedactSensitiveData(json, "application/json") ?? json;
+        }
+        catch (Exception ex)
+        {
+            return $"[Serialization Error: {ex.Message}]";
+        }
+    }
+
+    private static string SerializeAndRedactObject(ILogger logger, object obj)
     {
         try
         {
             // Serialize the object to JSON
             var json = JsonSerializer.Serialize(obj, DefaultJsonOptions);
             
-            // Try to get the service provider from the logger and use the actual RedactionService
-            var serviceProvider = GetServiceProvider(logger);
-            if (serviceProvider != null)
-            {
-                var redactionService = serviceProvider.GetService<IRedactionService>();
-                if (redactionService != null)
-                {
-                    return redactionService.RedactSensitiveData(json, "application/json");
-                }
-            }
+            // Try to get the RedactionService from the global service provider accessor
+            var redactionService = ServiceProviderAccessor.GetRedactionService();
             
-            // Fallback to basic redaction if service provider not available
-            return ApplyBasicRedaction(json);
+            if (redactionService != null)
+            {
+                return redactionService.RedactSensitiveData(json, "application/json");
+            }
+            else
+            {
+                // Fallback to basic redaction if service provider not available
+                return ApplyBasicRedaction(json);
+            }
         }
         catch (Exception ex)
         {
@@ -192,7 +283,7 @@ public static class LoggerExtensions
     private static string ApplyBasicRedaction(string json)
     {
         // Apply basic redaction for common sensitive fields as fallback
-        var sensitiveFields = new[] { "password", "token", "secret", "key", "apikey", "authorization" };
+        var sensitiveFields = new[] { "username", "password", "token", "secret", "key", "apikey", "authorization", "auth", "credentials" };
         
         foreach (var field in sensitiveFields)
         {

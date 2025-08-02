@@ -70,10 +70,27 @@ namespace MyCompany.Observability.Configuration
                     .Where(k => !string.IsNullOrEmpty(k))
                     .ToList();
             }
+            else
+            {
+                // Fallback to basic defaults if not configured
+                options.Redaction.SensitiveKeys = new List<string> { "password", "token", "secret", "key" };
+            }
             
             var redactionText = ConfigurationManager.AppSettings[$"{sectionName}:Redaction:RedactionText"];
             if (!string.IsNullOrEmpty(redactionText))
                 options.Redaction.RedactionText = redactionText;
+                
+            if (bool.TryParse(ConfigurationManager.AppSettings[$"{sectionName}:Redaction:RedactHeaders"], out bool redactHeaders))
+                options.Redaction.RedactHeaders = redactHeaders;
+                
+            if (bool.TryParse(ConfigurationManager.AppSettings[$"{sectionName}:Redaction:RedactQueryParams"], out bool redactQueryParams))
+                options.Redaction.RedactQueryParams = redactQueryParams;
+                
+            if (bool.TryParse(ConfigurationManager.AppSettings[$"{sectionName}:Redaction:RedactRequestBody"], out bool redactRequestBody))
+                options.Redaction.RedactRequestBody = redactRequestBody;
+                
+            if (bool.TryParse(ConfigurationManager.AppSettings[$"{sectionName}:Redaction:RedactResponseBody"], out bool redactResponseBody))
+                options.Redaction.RedactResponseBody = redactResponseBody;
             
             // Load request/response logging options
             if (bool.TryParse(ConfigurationManager.AppSettings[$"{sectionName}:RequestResponseLogging:LogRequestHeaders"], out bool logReqHeaders))

@@ -178,13 +178,42 @@ namespace WebApplication1.Controllers
         public IHttpActionResult GetUserDetails()
         {
             _logger.LogInformation("Retrieving user details");
+            
+            var userRequest = new 
+            { 
+                Method = "GET", 
+                Path = "/api/values/userdetails", 
+                Timestamp = DateTime.UtcNow,
+                RequestId = Guid.NewGuid().ToString(),
+                UserId = 123
+            };
+            
             var userDetails = new UserDetails
             {
                 Username = "DemoUser",
                 Role = "User",
                 Password = "test" // Sensitive data, should be redacted in production logs
             };
-            _logger.LogInformation("User details retrieved: {@UserDetails}", userDetails);
+            
+            var userResponse = new 
+            { 
+                StatusCode = 200, 
+                Data = userDetails, 
+                Timestamp = DateTime.UtcNow,
+                Success = true
+            };
+            
+            _logger.LogInformation("User details retrieved successfully: {@UserDetails}", userDetails);
+
+            // Use the new LogInfo method with message template and objects
+            _logger.LogInfo("User details with request and response. Request:{@UserRequest}, Response:{@UserResponse}", userRequest, userResponse);
+            
+            // Alternative syntax without {@} destructuring 
+            _logger.LogInfo("User details with request and response. Request", userRequest, userResponse);
+            
+            // You can also mix primitives and objects
+            _logger.LogInfo("Processing user {UserId} with request {UserRequest} and response {UserResponse}", 123, userRequest, userResponse);
+
             return Ok(userDetails);
         }
     }

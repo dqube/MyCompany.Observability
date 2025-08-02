@@ -5,6 +5,8 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using System.Web;
 using Microsoft.Extensions.Logging;
@@ -171,9 +173,10 @@ namespace MyCompany.Observability.Framework
 
             _metricsService?.IncrementActiveRequests();
 
+            // Store request data for later combined logging
             if (_options != null && _options.EnableRequestResponseLogging && !ShouldSkipLogging(path))
             {
-                Task.Run(() => LogRequestAsync(context.Request, requestId));
+                context.Items["LogCombined"] = true;
             }
         }
 
@@ -241,9 +244,11 @@ namespace MyCompany.Observability.Framework
             _metricsService?.IncrementRequestCount(method, GetRouteForMetrics(path), statusCode);
             _metricsService?.DecrementActiveRequests();
 
-            if (_options != null && _options.EnableRequestResponseLogging && !ShouldSkipLogging(path))
+            // Use combined request/response logging
+            if (_options != null && _options.EnableRequestResponseLogging && !ShouldSkipLogging(path) && 
+                context.Items["LogCombined"] is true)
             {
-                Task.Run(() => LogResponseAsync(context.Response, requestId, duration, context));
+                Task.Run(() => LogRequestResponse(context.Request, context.Response, requestId, duration, context));
             }
         }
 
@@ -348,24 +353,23 @@ namespace MyCompany.Observability.Framework
         {
             try
             {
-                var requestInfo = new
+                var requestInfo = new Dictionary<string, object?>
                 {
-                    RequestId = requestId,
-                    Method = request.HttpMethod,
-                    Path = request.Url?.AbsolutePath,
-                    QueryString = _redactionService?.RedactQueryString(request.Url?.Query ?? string.Empty),
-                    Headers = _options?.RequestResponseLogging?.LogRequestHeaders == true
-                        ? _redactionService?.RedactHeaders(GetHeaders(request.Headers))
-                        : null,
-                    Body = await GetRequestBodyAsync(request)
+                    ["RequestId"] = requestId,
+                    ["Method"] = request.HttpMethod,
+                    ["Path"] = request.Url?.AbsolutePath,
+                    ["QueryString"] = _redactionService?.RedactQueryString(request.Url?.Query ?? string.Empty),                  
+                    ["Body"] = await GetRequestBodyAsync(request)
                 };
 
-                var json = System.Text.Json.JsonSerializer.Serialize(requestInfo, new System.Text.Json.JsonSerializerOptions
+                var jsonOptions = new JsonSerializerOptions
                 {
                     WriteIndented = false,
-                    DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
-                });
+                    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+                    Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+                };
 
+                var json = JsonSerializer.Serialize(requestInfo, jsonOptions);
                 _logger?.LogInformation("Request: {RequestJson}", json);
             }
             catch (Exception ex)
@@ -378,24 +382,23 @@ namespace MyCompany.Observability.Framework
         {
             try
             {
-                var responseInfo = new
+                var responseInfo = new Dictionary<string, object?>
                 {
-                    RequestId = requestId,
-                    StatusCode = response.StatusCode,
-                    Duration = duration.TotalMilliseconds,
-                    Headers = _options?.RequestResponseLogging?.LogResponseHeaders == true
-                        ? _redactionService?.RedactHeaders(GetHeaders(response.Headers))
-                        : null,
-                    Body = await GetResponseBodyAsync(response, context)
+                    ["RequestId"] = requestId,
+                    ["StatusCode"] = response?.StatusCode,
+                    ["Duration"] = duration.TotalMilliseconds,                  
+                    ["Response"] = await GetResponseBodyAsync(response, context)
                 };
 
-                var json = System.Text.Json.JsonSerializer.Serialize(responseInfo, new System.Text.Json.JsonSerializerOptions
+                var jsonOptions = new JsonSerializerOptions
                 {
                     WriteIndented = false,
-                    DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
-                });
+                    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+                    Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+                };
 
-                var logLevel = response.StatusCode >= 400 ? Microsoft.Extensions.Logging.LogLevel.Warning : Microsoft.Extensions.Logging.LogLevel.Information;
+                var json = JsonSerializer.Serialize(responseInfo, jsonOptions);
+                var logLevel = (response?.StatusCode ?? 500) >= 400 ? LogLevel.Warning : LogLevel.Information;
                 _logger?.Log(logLevel, "Response: {ResponseJson}", json);
             }
             catch (Exception ex)
@@ -445,6 +448,12 @@ namespace MyCompany.Observability.Framework
                 return null;
             }
 
+            if (response == null)
+            {
+                _logger?.LogDebug("Response is null");
+                return "[Response is null]";
+            }
+
             try
             {
                 context ??= HttpContext.Current;
@@ -455,10 +464,13 @@ namespace MyCompany.Observability.Framework
                     return "[No HttpContext]";
                 }
 
-                var capturedBody = context.Items["CapturedResponseBody"] as string;
-                var capturedContentType = context.Items["ResponseContentType"] as string ?? response.ContentType;
+                // Force flush to ensure all data is written to the filter
+                try { context?.Response?.Flush(); } catch { }
 
-                _logger?.LogDebug("Web API action filter captured body: {HasContent}, ContentType: {ContentType}",
+                var capturedBody = context.Items?["CapturedResponseBody"] as string;
+                var capturedContentType = context.Items?["ResponseContentType"] as string ?? response?.ContentType;
+
+                _logger?.LogDebug("Captured body: {HasContent}, ContentType: {ContentType}",
                     !string.IsNullOrEmpty(capturedBody), capturedContentType);
 
                 if (!string.IsNullOrEmpty(capturedBody))
@@ -469,29 +481,11 @@ namespace MyCompany.Observability.Framework
                         return null;
                     }
 
-                    _logger?.LogDebug("Using Web API action filter captured response body of length {Length}", capturedBody.Length);
+                    _logger?.LogDebug("Using captured response body of length {Length}", capturedBody.Length);
                     return _redactionService?.RedactSensitiveData(capturedBody, capturedContentType ?? "application/json");
                 }
 
-                _logger?.LogDebug("No Web API action filter capture, checking response filter");
-
-                if (!ShouldLogBody(response.ContentType))
-                {
-                    _logger?.LogDebug("Response content type {ContentType} not in allowed list", response.ContentType);
-                    return null;
-                }
-
-                var responseFilter = context.Items["ResponseFilter"] as ResponseFilterStream;
-                if (responseFilter != null)
-                {
-                    var filterCapturedBody = context.Items["CapturedResponseBody"] as string;
-                    if (!string.IsNullOrEmpty(filterCapturedBody))
-                    {
-                        _logger?.LogDebug("Using response filter captured content of length {Length}", filterCapturedBody.Length);
-                        return _redactionService?.RedactSensitiveData(filterCapturedBody, response.ContentType ?? "application/json");
-                    }
-                }
-
+                // If still not captured, log all context.Items for diagnostics
                 var itemsInfo = new System.Text.StringBuilder();
                 itemsInfo.AppendLine("HttpContext.Items contents:");
                 foreach (var key in context.Items.Keys)
@@ -521,9 +515,11 @@ namespace MyCompany.Observability.Framework
                 .Any(ct => contentType.StartsWith(ct, StringComparison.OrdinalIgnoreCase));
         }
 
-        private Dictionary<string, string> GetHeaders(System.Collections.Specialized.NameValueCollection headers)
+        private Dictionary<string, string> GetHeaders(System.Collections.Specialized.NameValueCollection? headers)
         {
             var result = new Dictionary<string, string>();
+            if (headers == null) return result;
+            
             foreach (string key in headers.Keys)
             {
                 if (key != null)
@@ -673,6 +669,99 @@ namespace MyCompany.Observability.Framework
             }
 
             return string.Join("/", segments);
+        }
+
+        /// <summary>
+        /// Logs request and response together in a single log entry
+        /// </summary>
+        public static async Task LogRequestResponse(HttpRequest request, HttpResponse response, string requestId, TimeSpan duration, HttpContext? context = null)
+        {
+            if (_logger == null || _options == null || !_options.EnableRequestResponseLogging)
+                return;
+
+            try
+            {
+                var requestBody = await GetRequestBodyForLogging(request).ConfigureAwait(false);
+                var responseBody = await GetResponseBodyForLogging(response, context).ConfigureAwait(false);
+
+                var logData = new Dictionary<string, object?>
+                {
+                    ["RequestId"] = requestId,
+                    ["Duration"] = duration.TotalMilliseconds,
+                    ["StatusCode"]= response?.StatusCode,
+                    ["Method"] = request?.HttpMethod,
+                    ["Path"] = request?.Url?.AbsolutePath,
+                    ["QueryString"] = _redactionService?.RedactQueryString(request?.Url?.Query ?? string.Empty),
+                    ["Request"] = requestBody,                    
+                    ["Response"] = responseBody
+                   
+                };
+
+                var json = JsonSerializer.Serialize(logData, new JsonSerializerOptions
+                {
+                    WriteIndented = false,
+                    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+                    Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+                });
+
+                var logLevel = (response?.StatusCode ?? 500) >= 400 ? LogLevel.Warning : LogLevel.Information;
+                _logger.Log(logLevel, "RequestResponse: {Data}", json);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error logging request/response for RequestId: {RequestId}", requestId);
+            }
+        }
+
+        private static async Task<string?> GetRequestBodyForLogging(HttpRequest? request)
+        {
+            if (request == null || _options?.RequestResponseLogging?.LogRequestBody != true)
+                return null;
+
+            try
+            {
+                if (request.InputStream.CanSeek)
+                {
+                    var originalPosition = request.InputStream.Position;
+                    request.InputStream.Position = 0;
+
+                    using (var reader = new StreamReader(request.InputStream, Encoding.UTF8, false, 1024, true))
+                    {
+                        var body = await reader.ReadToEndAsync().ConfigureAwait(false);
+                        request.InputStream.Position = originalPosition;
+
+                        return string.IsNullOrEmpty(body) ? null : _redactionService?.RedactSensitiveData(body, request.ContentType ?? "application/json");
+                    }
+                }
+                return "[Stream not seekable]";
+            }
+            catch
+            {
+                return "[Error reading request]";
+            }
+        }
+
+        private static async Task<string?> GetResponseBodyForLogging(HttpResponse? response, HttpContext? context)
+        {
+            if (response == null || _options?.RequestResponseLogging?.LogResponseBody != true)
+                return null;
+
+            try
+            {
+                context ??= HttpContext.Current;
+                if (context == null) return "[No context]";
+
+                var capturedBody = context.Items?["CapturedResponseBody"] as string;
+                if (!string.IsNullOrEmpty(capturedBody))
+                {
+                    return _redactionService?.RedactSensitiveData(capturedBody, response.ContentType ?? "application/json");
+                }
+                return "[Not captured]";
+            }
+            catch
+            {
+                return "[Error reading response]";
+            }
         }
 
         public void Dispose()

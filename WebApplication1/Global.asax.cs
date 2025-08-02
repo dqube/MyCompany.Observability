@@ -53,6 +53,9 @@ namespace WebApplication1
                 // Copy request/response logging configuration
                 options.RequestResponseLogging = configOptions.RequestResponseLogging;
                 
+                // Copy redaction configuration
+                options.Redaction = configOptions.Redaction;
+                
                 // Copy exporter configuration
                 options.Exporter = configOptions.Exporter;
                 
@@ -68,6 +71,9 @@ namespace WebApplication1
 
             _serviceProvider = services.BuildServiceProvider();
 
+            // Set the service provider in the accessor for use in extension methods
+            MyCompany.Observability.Extensions.ServiceProviderAccessor.SetServiceProvider(_serviceProvider);
+
             // Get the logger factory and create a test logger to verify logging is working
             var loggerFactory = _serviceProvider.GetRequiredService<ILoggerFactory>();
             var logger = loggerFactory.CreateLogger<WebApiApplication>();
@@ -77,9 +83,6 @@ namespace WebApplication1
                 configOptions.ServiceName, configOptions.ServiceVersion);
             
             // Also write to Debug output for immediate visibility
-            Debug.WriteLine($"[WebApplication1] Observability initialized - Service: {configOptions.ServiceName} v{configOptions.ServiceVersion}");
-            Debug.WriteLine($"[WebApplication1] Console logging enabled: {configOptions.Logging?.EnableConsoleLogging}");
-            Debug.WriteLine($"[WebApplication1] Request/Response logging enabled: {configOptions.EnableRequestResponseLogging}");
 
             // Configure the HTTP module - this is just registration, no implementation logic here
             this.UseRequestResponseLogging(_serviceProvider);
